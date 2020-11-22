@@ -45,7 +45,7 @@ namespace cli
 class TelnetSession : public detail::Session
 {
 public:
-    TelnetSession(boost::asio::ip::tcp::socket _socket) :
+    TelnetSession(ASIO_NS::ip::tcp::socket _socket) :
         detail::Session(std::move(_socket))
     {}
 
@@ -430,7 +430,7 @@ public:
     TelnetServer(detail::asio::BoostExecutor::ContextType& ios, unsigned short port) :
         detail::Server(ios, port)
     {}
-    virtual std::shared_ptr<detail::Session> CreateSession(boost::asio::ip::tcp::socket _socket) override
+    virtual std::shared_ptr<detail::Session> CreateSession(ASIO_NS::ip::tcp::socket _socket) override
     {
         return std::make_shared<TelnetSession>(std::move(_socket));
     }
@@ -442,7 +442,7 @@ class CliTelnetSession : public detail::InputDevice, public TelnetSession, publi
 {
 public:
 
-    CliTelnetSession(boost::asio::ip::tcp::socket _socket, Cli& _cli, std::function< void(std::ostream&)> _exitAction, std::size_t historySize ) :
+    CliTelnetSession(ASIO_NS::ip::tcp::socket _socket, Cli& _cli, std::function< void(std::ostream&)> _exitAction, std::size_t historySize ) :
         InputDevice(detail::asio::BoostExecutor(_socket)),
         TelnetSession(std::move(_socket)),
         CliSession(_cli, TelnetSession::OutStream(), historySize),
@@ -554,7 +554,7 @@ public:
     {
         exitAction = action;
     }
-    virtual std::shared_ptr<detail::Session> CreateSession(boost::asio::ip::tcp::socket _socket) override
+    virtual std::shared_ptr<detail::Session> CreateSession(ASIO_NS::ip::tcp::socket _socket) override
     {
         return std::make_shared<CliTelnetSession>(std::move(_socket), cli, exitAction, historySize);
     }

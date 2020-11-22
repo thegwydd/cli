@@ -51,21 +51,21 @@ public:
 
 protected:
 
-    Session(boost::asio::ip::tcp::socket _socket) : socket(std::move(_socket)), outStream( this ) {}
+    Session(ASIO_NS::ip::tcp::socket _socket) : socket(std::move(_socket)), outStream( this ) {}
 
     virtual void Disconnect()
     {
-        socket.shutdown( boost::asio::ip::tcp::socket::shutdown_both );
+        socket.shutdown( ASIO_NS::ip::tcp::socket::shutdown_both );
         socket.close();
     }
 
     virtual void Read()
     {
       auto self( shared_from_this() );
-      socket.async_read_some( boost::asio::buffer( data, max_length ),
-          [ this, self ]( boost::system::error_code ec, std::size_t length )
+      socket.async_read_some( ASIO_NS::buffer( data, max_length ),
+          [ this, self ](SYSTEM_NS::error_code ec, std::size_t length )
           {
-              if ( !socket.is_open() || ( ec == boost::asio::error::eof ) || ( ec == boost::asio::error::connection_reset ) )
+              if ( !socket.is_open() || ( ec == ASIO_NS::error::eof ) || ( ec == ASIO_NS::error::connection_reset ) )
                   OnDisconnect();
               else if ( ec )
                   OnError();
@@ -79,9 +79,9 @@ protected:
 
     virtual void Send(const std::string& msg)
     {
-        boost::system::error_code ec;
-        boost::asio::write(socket, boost::asio::buffer(msg), ec);
-        if ((ec == boost::asio::error::eof) || (ec == boost::asio::error::connection_reset))
+        SYSTEM_NS::error_code ec;
+        ASIO_NS::write(socket, ASIO_NS::buffer(msg), ec);
+        if ((ec == ASIO_NS::error::eof) || (ec == ASIO_NS::error::connection_reset))
             OnDisconnect();
         else if (ec)
             OnError();
@@ -110,7 +110,7 @@ private:
         return c;
     }
 
-    boost::asio::ip::tcp::socket socket;
+    ASIO_NS::ip::tcp::socket socket;
     enum { max_length = 1024 };
     char data[ max_length ];
     std::ostream outStream;
@@ -125,31 +125,31 @@ public:
     Server& operator = ( const Server& ) = delete;
 
     Server(asio::BoostExecutor::ContextType& ios, unsigned short port) :
-        acceptor( ios, boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), port )),
+        acceptor( ios, ASIO_NS::ip::tcp::endpoint( ASIO_NS::ip::tcp::v4(), port )),
         socket( ios )
     {
         Accept();
     }
     Server(asio::BoostExecutor::ContextType& ios, std::string address, unsigned short port) :
-        acceptor( ios, boost::asio::ip::tcp::endpoint(asio::IpAddressFromString(address), port)),
+        acceptor( ios, ASIO_NS::ip::tcp::endpoint(asio::IpAddressFromString(address), port)),
         socket( ios )
     {
         Accept();
     }
     virtual ~Server() = default;
     // returns shared_ptr instead of unique_ptr because Session needs to use enable_shared_from_this
-    virtual std::shared_ptr< Session > CreateSession( boost::asio::ip::tcp::socket socket ) = 0;
+    virtual std::shared_ptr< Session > CreateSession( ASIO_NS::ip::tcp::socket socket ) = 0;
 private:
     void Accept()
     {
-        acceptor.async_accept( socket, [this](boost::system::error_code ec)
+        acceptor.async_accept( socket, [this](SYSTEM_NS::error_code ec)
             {
                 if ( !ec ) CreateSession( std::move( socket ) ) -> Start();
                 Accept();
             });
     }
-    boost::asio::ip::tcp::acceptor acceptor;
-    boost::asio::ip::tcp::socket socket;
+    ASIO_NS::ip::tcp::acceptor acceptor;
+    ASIO_NS::ip::tcp::socket socket;
 };
 
 } // namespace detail

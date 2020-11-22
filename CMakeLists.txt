@@ -33,15 +33,76 @@ project(cli VERSION 1.2.1 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
+option(CLI_UseBoost "Use boost library." OFF)
+option(CLI_UseConan "Use conan.io recipe" OFF)
 option(CLI_BuildExamples "Build the examples." OFF)
 option(CLI_BuildTests "Build the unit tests." OFF)
 
-set(Boost_NO_BOOST_CMAKE ON)
-find_package(Boost 1.55 REQUIRED COMPONENTS system)
-find_package(Threads REQUIRED)
+
+if (CLI_UseConan)
+    # Download automatically, you can also just copy the conan.cmake file
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/develop/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
+    endif()
+    include(${CMAKE_BINARY_DIR}/conan.cmake)
+    
+    conan_cmake_run(CONANFILE conanfile.txt
+                    BASIC_SETUP ${ProjectId}
+                    BUILD missing
+                    INSTALL_FOLDER "${CMAKE_BINARY_DIR}/${ProjectId}/.conan"
+                    )
+    
+    include(${CMAKE_BINARY_DIR}/${ProjectId}/.conan/conanbuildinfo.cmake)
+    conan_basic_setup(NO_OUTPUT_DIRS)
+else()
+    set(ADDITIONAL_LIB_DIRS ${CONAN_LIB_DIRS}) 
+    set(ADDITIONAL_LIBS ${CONAN_LIBS}) 
+endif()
+
+if (CLI_UseBoost)
+    set(Boost_NO_BOOST_CMAKE ON)
+    find_package(Boost 1.55 REQUIRED COMPONENTS system)
+    find_package(Threads REQUIRED)
+    set(ADDITIONAL_LIBS Boost::system Threads::Threads) 
+endif()
+
+set(CLI_SOURCES 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/historystorage.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/remotecli.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/volatilehistorystorage.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/cli.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/cliasyncsession.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/clifilesession.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/clilocalsession.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/colorprofile.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/filehistorystorage.h>
+
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/newboostasio.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/oldboostasio.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/rang.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/server.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/split.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/terminal.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/winkeyboard.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/boostasio.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/commonprefix.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/fromstring.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/history.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/inputdevice.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/inputhandler.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/keyboard.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/linuxkeyboard.h>
+    )
+
+if(POLICY CMP0076)
+  cmake_policy(SET CMP0076 NEW)
+endif()
 
 # Add Library
 add_library(cli INTERFACE)
+# Add Library project
+target_sources(cli INTERFACE ${CLI_SOURCES})
 # Add target alias
 add_library(cli::cli ALIAS cli)
 
@@ -51,9 +112,15 @@ target_include_directories(cli
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_link_libraries(cli INTERFACE Boost::system Threads::Threads)
+if (CLI_UseBoost)
+    target_link_libraries(cli INTERFACE ${ADDITIONAL_LIBS})
+    target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
+	add_definitions(-DCLI_USE_BOOST)
+else()
+	add_definitions(-DASIO_DISABLE_STD_FUTURE)
+endif()
+
 target_compile_features(cli INTERFACE cxx_std_14)
-target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
 
 # Examples
 if (CLI_BuildExamples)

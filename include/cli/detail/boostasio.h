@@ -30,22 +30,46 @@
 #ifndef CLI_DETAIL_BOOSTIO_H_
 #define CLI_DETAIL_BOOSTIO_H_
 
-#include <boost/version.hpp>
+#ifdef CLI_USE_BOOST
+#   include <boost/version.hpp>
+#   define SYSTEM_NS    boost::system
 
-#if BOOST_VERSION < 106600
-    #include "oldboostasio.h"
-    namespace cli {
-    namespace detail {
-        namespace asio = oldboost;
-    }
-    }
+#   if BOOST_VERSION < 106600
+        #include "oldboostasio.h"
+        namespace cli {
+            namespace detail {
+                namespace asio = oldboost;
+                }
+            }
+#   else
+        #include "newboostasio.h"
+        namespace cli {
+            namespace detail {
+                namespace asio = newboost;
+                }
+            }
+
+#   endif
 #else
-    #include "newboostasio.h"
-    namespace cli {
-    namespace detail {
-        namespace asio = newboost;
-    }
-    }
+#   include <asio/version.hpp>
+#   define SYSTEM_NS    std
+
+#   if ASIO_VERSION < 101300
+#       include "oldboostasio.h"
+        namespace cli {
+            namespace detail {
+                namespace asio = oldboost;
+                }
+            }
+#   else
+#       include "newboostasio.h"
+        namespace cli {
+            namespace detail {
+                namespace asio = newboost;
+                }
+            }
+#   endif
+
 #endif
 
 #endif // CLI_DETAIL_BOOSTIO_H_

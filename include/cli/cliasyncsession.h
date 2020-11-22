@@ -61,7 +61,7 @@ private:
     {
         Prompt();
         // Read a line of input entered by the user.
-        boost::asio::async_read_until(
+        ASIO_NS::async_read_until(
             input,
             inputBuffer,
             '\n',
@@ -73,12 +73,12 @@ private:
 
     void NewLine( const boost::system::error_code& error, std::size_t length )
     {
-        if ( !error || error == boost::asio::error::not_found )
+        if ( !error || error == ASIO_NS::error::not_found )
         {
             auto bufs = inputBuffer.data();
             auto size = static_cast<long>(length);
             if ( !error ) --size; // remove \n
-            std::string s( boost::asio::buffers_begin( bufs ), boost::asio::buffers_begin( bufs ) + size );
+            std::string s(ASIO_NS::buffers_begin( bufs ), ASIO_NS::buffers_begin( bufs ) + size );
             inputBuffer.consume( length );
 
             Feed( s );
@@ -90,8 +90,8 @@ private:
         }
     }
 
-    boost::asio::streambuf inputBuffer;
-    boost::asio::posix::stream_descriptor input;
+    ASIO_NS::streambuf inputBuffer;
+    ASIO_NS::posix::stream_descriptor input;
 };
 
 } // namespace

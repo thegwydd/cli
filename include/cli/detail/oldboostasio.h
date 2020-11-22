@@ -30,7 +30,16 @@
 #ifndef CLI_DETAIL_OLDBOOSTASIO_H_
 #define CLI_DETAIL_OLDBOOSTASIO_H_
 
-#include <boost/asio.hpp>
+#ifdef CLI_USE_BOOST
+#   include <boost/asio.hpp>
+#   define ASIO_NS          boost::asio
+#   define ASIO_SERVICE     boost::asio::io_service
+#else
+#   include <asio.hpp>
+#   define ASIO_NS      ::asio
+#   define ASIO_SERVICE ::asio::io_service
+#endif
+
 
 namespace cli {
 namespace detail {
@@ -39,19 +48,19 @@ namespace oldboost {
 class BoostExecutor
 {
 public:
-    using ContextType = boost::asio::io_service;
+    using ContextType = ASIO_NS::io_service;
     explicit BoostExecutor(ContextType& _ios) :
         ios(_ios) {}
-    explicit BoostExecutor(boost::asio::ip::tcp::socket& socket) :
+    explicit BoostExecutor(ASIO_NS::ip::tcp::socket& socket) :
         ios(socket.get_io_service()) {}
     template <typename T> void Post(T&& t) { ios.post(std::forward<T>(t)); }
 private:
     ContextType& ios;
 };
 
-inline boost::asio::ip::address IpAddressFromString(const std::string& address)
+inline ASIO_NS::ip::address IpAddressFromString(const std::string& address)
 {
-    return boost::asio::ip::address::from_string(address);
+    return ASIO_NS::ip::address::from_string(address);
 }
 
 } // namespace oldboost

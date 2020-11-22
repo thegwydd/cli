@@ -227,11 +227,7 @@ private:
 
 int main()
 {
-#if BOOST_VERSION < 106600
-    boost::asio::io_service ioc;
-#else
-    boost::asio::io_context ioc;
-#endif
+    ASIO_SERVICE ioc;
     CmdHandler colorCmd;
     CmdHandler nocolorCmd;    
 
@@ -300,9 +296,9 @@ int main()
     );
 
 #if BOOST_VERSION < 106600
-    boost::asio::io_service::work work(ioc);
+    ASIO_NS::io_service::work work(ioc);
 #else
-    auto work = boost::asio::make_work_guard(ioc);
+    auto work = ASIO_NS::make_work_guard(ioc);
 #endif    
     ioc.run();
 

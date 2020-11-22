@@ -30,11 +30,27 @@
 #ifndef CLI_DETAIL_NEWBOOSTASIO_H_
 #define CLI_DETAIL_NEWBOOSTASIO_H_
 
-#if BOOST_VERSION >= 107400
-#   define BOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT
+#ifdef CLI_USE_BOOST
+#   if BOOST_VERSION >= 107400
+#      define BOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT
+#   endif
+
+#   include <boost/asio.hpp>
+
+#   define ASIO_NS      boost::asio
+#   define ASIO_SERVICE boost::asio::io_context
+
+#else
+#   if ASIO_VERSION >= 101700
+#      define ASIO_USE_TS_EXECUTOR_AS_DEFAULT
+#   endif
+
+#   include <asio.hpp>
+
+#   define ASIO_NS      ::asio
+#   define ASIO_SERVICE ::asio::io_context
 #endif
 
-#include <boost/asio.hpp>
 
 namespace cli {
 namespace detail {
@@ -43,19 +59,19 @@ namespace newboost {
 class BoostExecutor
 {
 public:
-    using ContextType = boost::asio::io_context;
+    using ContextType = ASIO_NS::io_context;
     explicit BoostExecutor(ContextType& ios) :
         executor(ios.get_executor()) {}
-    explicit BoostExecutor(boost::asio::ip::tcp::socket& socket) :
+    explicit BoostExecutor(ASIO_NS::ip::tcp::socket& socket) :
         executor(socket.get_executor()) {}
-    template <typename T> void Post(T&& t) { boost::asio::post(executor, std::forward<T>(t)); }
+    template <typename T> void Post(T&& t) { ASIO_NS::post(executor, std::forward<T>(t)); }
 private:
-    boost::asio::executor executor;
+    ASIO_NS::executor executor;
 };
 
-inline boost::asio::ip::address IpAddressFromString(const std::string& address)
+inline ASIO_NS::ip::address IpAddressFromString(const std::string& address)
 {
-    return boost::asio::ip::make_address(address);
+    return ASIO_NS::ip::make_address(address);
 }
 
 } // namespace newboost

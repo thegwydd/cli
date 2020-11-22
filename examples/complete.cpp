@@ -42,11 +42,7 @@ using namespace std;
 
 int main()
 {
-#if BOOST_VERSION < 106600
-    boost::asio::io_service ios;
-#else
-    boost::asio::io_context ios;
-#endif
+    ASIO_SERVICE ios;
     CmdHandler colorCmd;
     CmdHandler nocolorCmd;
 
