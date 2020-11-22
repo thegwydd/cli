@@ -167,7 +167,7 @@ int main()
     // the history of all the sessions, until the cli is shut down.
     Cli cli( std::move(rootMenu), std::make_unique<FileHistoryStorage>(".cli") );
     // global exit action
-    cli.ExitAction( [](auto& out){ out << "Goodbye and thanks for all the fish.\n"; } );
+    cli.ExitAction( [](std::ostream & out){ out << "Goodbye and thanks for all the fish.\n"; } );
     // std exception custom handler
     cli.StdExceptionHandler(
         [](std::ostream& out, const std::string& cmd, const std::exception& e)
@@ -182,7 +182,7 @@ int main()
 
     CliLocalTerminalSession localSession(cli, ios, std::cout, 200);
     localSession.ExitAction(
-        [&ios](auto& out) // session exit action
+        [&ios](std::ostream & out) // session exit action
         {
             out << "Closing App...\n";
             ios.stop();
@@ -195,14 +195,14 @@ int main()
 
     CliTelnetServer server(ios, 5000, cli);
     // exit action for all the connections
-    server.ExitAction( [](auto& out) { out << "Terminating this session...\n"; } );
+    server.ExitAction( [](std::ostream & out) { out << "Terminating this session...\n"; } );
 
 #else // ENABLE_TELNET_SERVER
 
-#if BOOST_VERSION < 106600
-    boost::asio::io_service::work work(ios);
+#ifdef CLI_OLD_ASIO
+    ASIO_NS::io_service::work work(ios);
 #else
-        auto work = boost::asio::make_work_guard(ios);
+    auto work = ASIO_NS::make_work_guard(ios);
 #endif  
 
 #endif // ENABLE_TELNET_SERVER

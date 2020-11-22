@@ -90,7 +90,7 @@ public:
             remove_if(
                 plugins.begin(),
                 plugins.end(),
-                [&](auto& p){ return p->Name() == plugin; }
+                [&]( std::unique_ptr<Plugin>& p){ return p->Name() == plugin; }
             ),
             plugins.end()
         );
@@ -284,18 +284,18 @@ int main()
 
     Cli cli( std::move(rootMenu) );
     // global exit action
-    cli.ExitAction( [](auto& out){ out << "Goodbye and thanks for all the fish.\n"; } );
+    cli.ExitAction( [](std::ostream & out){ out << "Goodbye and thanks for all the fish.\n"; } );
 
     CliLocalTerminalSession localSession(cli, ioc, std::cout, 200);
     localSession.ExitAction(
-        [&ioc](auto& out) // session exit action
+        [&ioc](std::ostream & out) // session exit action
         {
             out << "Closing App...\n";
             ioc.stop();
         }
     );
 
-#if BOOST_VERSION < 106600
+#ifdef CLI_OLD_ASIO
     ASIO_NS::io_service::work work(ioc);
 #else
     auto work = ASIO_NS::make_work_guard(ioc);

@@ -82,16 +82,12 @@ int main()
 
     Cli cli( std::move(rootMenu) );
     // global exit action
-    cli.ExitAction( [](auto& out){ out << "Goodbye and thanks for all the fish.\n"; } );
+    cli.ExitAction( [](std::ostream & out){ out << "Goodbye and thanks for all the fish.\n"; } );
 
-#if BOOST_VERSION < 106600
-    boost::asio::io_service ios;
-#else
-    boost::asio::io_context ios;
-#endif
+    ASIO_SERVICE ios;
     CliAsyncSession session(ios, cli);
     session.ExitAction(
-        [&ios](auto& out) // session exit action
+        [&ios](std::ostream & out) // session exit action
         {
             out << "Closing App...\n";
             ios.stop();

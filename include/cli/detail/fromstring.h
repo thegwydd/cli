@@ -53,6 +53,8 @@ T from_string(const std::string& s)
 
 #else
 
+#include "cpp_11_backport.h"
+
 #include <exception>
 #include <string>
 #include <sstream>

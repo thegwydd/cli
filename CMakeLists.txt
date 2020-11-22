@@ -29,6 +29,9 @@
 
 cmake_minimum_required(VERSION 3.8)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(cli VERSION 1.2.1 LANGUAGES CXX)
 
 include(GNUInstallDirs)
@@ -38,6 +41,8 @@ option(CLI_UseConan "Use conan.io recipe" OFF)
 option(CLI_BuildExamples "Build the examples." OFF)
 option(CLI_BuildTests "Build the unit tests." OFF)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (CLI_UseConan)
     # Download automatically, you can also just copy the conan.cmake file
@@ -55,9 +60,14 @@ if (CLI_UseConan)
     
     include(${CMAKE_BINARY_DIR}/${ProjectId}/.conan/conanbuildinfo.cmake)
     conan_basic_setup(NO_OUTPUT_DIRS)
-else()
+    
     set(ADDITIONAL_LIB_DIRS ${CONAN_LIB_DIRS}) 
     set(ADDITIONAL_LIBS ${CONAN_LIBS}) 
+
+    if (UNIX)
+        set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} pthread dl) 
+    endif (UNIX)
+
 endif()
 
 if (CLI_UseBoost)
@@ -93,6 +103,7 @@ set(CLI_SOURCES
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/inputhandler.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/keyboard.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/linuxkeyboard.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cli/detail/cpp_11_backport.h>
     )
 
 if(POLICY CMP0076)
@@ -107,7 +118,7 @@ target_sources(cli INTERFACE ${CLI_SOURCES})
 add_library(cli::cli ALIAS cli)
 
 target_include_directories(cli
-        INTERFACE
+    INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
@@ -117,10 +128,24 @@ if (CLI_UseBoost)
     target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
 	add_definitions(-DCLI_USE_BOOST)
 else()
+    target_link_libraries(cli INTERFACE ${ADDITIONAL_LIBS})
+    target_compile_definitions(cli INTERFACE ASIO_NO_DEPRECATED=1)
 	add_definitions(-DASIO_DISABLE_STD_FUTURE)
 endif()
 
-target_compile_features(cli INTERFACE cxx_std_14)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  # using Clang
+    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # using GCC
+    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  # using Intel C++
+    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  # using Visual Studio C++
+#    target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
+endif()
 
 # Examples
 if (CLI_BuildExamples)

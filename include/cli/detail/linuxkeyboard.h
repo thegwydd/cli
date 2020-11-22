@@ -33,6 +33,8 @@
 #include <thread>
 #include <memory>
 #include <atomic>
+
+#include "cpp_11_backport.h"
 #include "boostasio.h"
 
 #include <stdio.h>

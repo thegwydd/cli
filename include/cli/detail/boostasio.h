@@ -41,6 +41,7 @@
                 namespace asio = oldboost;
                 }
             }
+#       define CLI_OLD_ASIO
 #   else
         #include "newboostasio.h"
         namespace cli {
@@ -48,8 +49,10 @@
                 namespace asio = newboost;
                 }
             }
-
+#       define CLI_NEW_ASIO
 #   endif
+
+#   define HAS_POSIX_STREAM_DESCRIPTOR BOOST_ASIO_HAS_POSIX_STREAM_DESCRIPTOR
 #else
 #   include <asio/version.hpp>
 #   define SYSTEM_NS    std
@@ -61,6 +64,7 @@
                 namespace asio = oldboost;
                 }
             }
+#       define CLI_OLD_ASIO
 #   else
 #       include "newboostasio.h"
         namespace cli {
@@ -68,7 +72,10 @@
                 namespace asio = newboost;
                 }
             }
+#       define CLI_NEW_ASIO
 #   endif
+
+#   define HAS_POSIX_STREAM_DESCRIPTOR ASIO_HAS_POSIX_STREAM_DESCRIPTOR
 
 #endif
 

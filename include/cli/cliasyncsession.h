@@ -34,7 +34,7 @@
 #include "detail/boostasio.h"
 #include "cli.h" // CliSession
 
-#if !defined(BOOST_ASIO_HAS_POSIX_STREAM_DESCRIPTOR)
+#if !defined(HAS_POSIX_STREAM_DESCRIPTOR)
 #    error Async session is not supported on this platform.
 #endif
 
@@ -71,7 +71,7 @@ private:
         );
     }
 
-    void NewLine( const boost::system::error_code& error, std::size_t length )
+    void NewLine( const SYSTEM_NS::error_code& error, std::size_t length )
     {
         if ( !error || error == ASIO_NS::error::not_found )
         {

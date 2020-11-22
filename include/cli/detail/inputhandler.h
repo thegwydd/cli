@@ -33,6 +33,7 @@
 #include <functional>
 #include <string>
 #include "terminal.h"
+#include "cpp_11_backport.h"
 #include "inputdevice.h"
 #include "../cli.h" // CliSession
 #include "commonprefix.h"
@@ -49,7 +50,7 @@ public:
         session(_session),
         terminal(session.OutStream())
     {
-        kb.Register( [this](auto key){ this->Keypressed(key); } );
+        kb.Register( [this](std::pair<KeyType, char> key){ this->Keypressed(key); } );
     }
 
 private:
@@ -111,7 +112,7 @@ private:
                 }
                 session.OutStream() << '\n';
                 std::string items;
-                std::for_each( completions.begin(), completions.end(), [&items](auto& cmd){ items += '\t' + cmd; } );
+                std::for_each( completions.begin(), completions.end(), [&items](std::string& cmd){ items += '\t' + cmd; } );
                 session.OutStream() << items << '\n';
                 session.Prompt();
                 terminal.ResetCursor();

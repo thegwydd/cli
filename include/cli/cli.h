@@ -225,7 +225,7 @@ namespace cli
     {
         std::vector<std::string> result;
         std::for_each(cmds->begin(), cmds->end(),
-            [&currentLine,&result](const auto& cmd)
+            [&currentLine,&result](const std::shared_ptr<cli::Command> & cmd)
             {
                 auto c = cmd->GetCompletionRecursive(currentLine);
                 result.insert(
@@ -337,7 +337,7 @@ namespace cli
                     auto i = std::find_if(
                         scmds->begin(),
                         scmds->end(),
-                        [&](const auto& c){ return c.get() == scmd.get(); }
+                        [&](const std::shared_ptr<Command>& c){ return c.get() == scmd.get(); }
                     );
                     if (i != scmds->end())
                         scmds->erase(i);
@@ -790,8 +790,14 @@ namespace cli
             assert( first != last );
             assert( std::distance(first, last) == 1+sizeof...(Args) );
             const P p = detail::from_string<typename std::decay<P>::type>(*first);
+
+#if __cplusplus >= 201402L
             auto g = [&](auto ... pars){ f(p, pars...); };
             Select<decltype(g), Args...>::Exec(g, std::next(first), last);
+#else
+            auto g = [&](Args ... pars){ f(p, pars...); };
+            Select<decltype(g), Args...>::Exec(g, std::next(first), last);
+#endif
         }
     };
 
@@ -854,8 +860,13 @@ namespace cli
             {
                 try
                 {
+#if __cplusplus >= 201402L
                     auto g = [&](auto ... pars){ func( session.OutStream(), pars... ); };
                     Select<decltype(g), Args...>::Exec(g, std::next(cmdLine.begin()), cmdLine.end());
+#else
+                    auto g = [&](Args... pars) { func(session.OutStream(), pars...); };
+                    Select<decltype(g), Args...>::Exec(g, std::next(cmdLine.begin()), cmdLine.end());
+#endif
                 }
                 catch (std::bad_cast&)
                 {

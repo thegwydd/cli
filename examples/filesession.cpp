@@ -83,7 +83,7 @@ int main()
 
     Cli cli( std::move(rootMenu) );
     // global exit action
-    cli.ExitAction( [](auto& out){ out << "Goodbye and thanks for all the fish.\n"; } );
+    cli.ExitAction( [](std::ostream & out){ out << "Goodbye and thanks for all the fish.\n"; } );
 
     std::ifstream infile("input.txt");
     if (!infile)
