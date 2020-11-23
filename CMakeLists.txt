@@ -32,7 +32,8 @@ cmake_minimum_required(VERSION 3.8)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(cli VERSION 1.2.1 LANGUAGES CXX)
+set(ProjectId cli)
+project(${ProjectId} VERSION 1.2.1 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -41,25 +42,23 @@ option(CLI_UseConan "Use conan.io recipe" OFF)
 option(CLI_BuildExamples "Build the examples." OFF)
 option(CLI_BuildTests "Build the unit tests." OFF)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 if (CLI_UseConan)
     # Download automatically, you can also just copy the conan.cmake file
     if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/develop/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
+        message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan to ${CMAKE_BINARY_DIR}")
+        file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/develop/conan.cmake" "${CMAKE_BINARY_DIR}/conan.cmake")
     endif()
     include(${CMAKE_BINARY_DIR}/conan.cmake)
-    
-    conan_cmake_run(CONANFILE conanfile.txt
-                    BASIC_SETUP ${ProjectId}
+
+    # Run conan and, if needed, build missing dependencies
+    conan_cmake_run(BASIC_SETUP ${ProjectId}
+                    REQUIRES asio/1.18.0
                     BUILD missing
-                    INSTALL_FOLDER "${CMAKE_BINARY_DIR}/${ProjectId}/.conan"
+#                    INSTALL_FOLDER "${CONAN_CMAKE_FOLDER}/.conan"
                     )
     
-    include(${CMAKE_BINARY_DIR}/${ProjectId}/.conan/conanbuildinfo.cmake)
-    conan_basic_setup(NO_OUTPUT_DIRS)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup()
     
     set(ADDITIONAL_LIB_DIRS ${CONAN_LIB_DIRS}) 
     set(ADDITIONAL_LIBS ${CONAN_LIBS}) 
@@ -111,40 +110,40 @@ if(POLICY CMP0076)
 endif()
 
 # Add Library
-add_library(cli INTERFACE)
+add_library(${ProjectId} INTERFACE)
 # Add Library project
-target_sources(cli INTERFACE ${CLI_SOURCES})
+target_sources(${ProjectId} INTERFACE ${CLI_SOURCES})
 # Add target alias
 add_library(cli::cli ALIAS cli)
 
-target_include_directories(cli
+target_include_directories(${ProjectId}
     INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 if (CLI_UseBoost)
-    target_link_libraries(cli INTERFACE ${ADDITIONAL_LIBS})
-    target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
+    target_link_libraries(${ProjectId} INTERFACE ${ADDITIONAL_LIBS})
+    target_compile_definitions(${ProjectId} INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
 	add_definitions(-DCLI_USE_BOOST)
 else()
-    target_link_libraries(cli INTERFACE ${ADDITIONAL_LIBS})
-    target_compile_definitions(cli INTERFACE ASIO_NO_DEPRECATED=1)
+    target_link_libraries(${ProjectId} INTERFACE ${ADDITIONAL_LIBS})
+    target_compile_definitions(${ProjectId} INTERFACE ASIO_NO_DEPRECATED=1)
 	add_definitions(-DASIO_DISABLE_STD_FUTURE)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # using Clang
-    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+    target_compile_definitions(${ProjectId} INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # using GCC
-    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+    target_compile_definitions(${ProjectId} INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # using Intel C++
-    target_compile_definitions(cli INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
+    target_compile_definitions(${ProjectId} INTERFACE CPP11_BACKPORT_ENABLE_MAKE_UNIQUE=1)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # using Visual Studio C++
-#    target_compile_definitions(cli INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
+#    target_compile_definitions(${ProjectId} INTERFACE BOOST_ASIO_NO_DEPRECATED=1)
 endif()
 
 # Examples
@@ -179,7 +178,7 @@ configure_file(
 	@ONLY
 )
 
-install(TARGETS cli EXPORT cliTargets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ${ProjectId} EXPORT cliTargets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(EXPORT cliTargets FILE cliTargets.cmake NAMESPACE cli:: DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cli)
 
 install(
