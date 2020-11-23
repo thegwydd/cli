@@ -25,7 +25,7 @@ class CliCppConan(ConanFile):
         cmake.build()
 
     def package(self):
-        self.copy("*.h", dst="include", src="include", keep_path=False)
+        self.copy("*.h", dst="include", src="include", keep_path=True)
         self.copy("*.lib", dst="lib", keep_path=False)
         self.copy("*.a", dst="lib", keep_path=False)
 
